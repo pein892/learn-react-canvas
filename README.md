@@ -1,231 +1,203 @@
-# react-canvas
+**基于Flipboard的React Canvas脚手架尝试实现swing的分享页面。**
 
-[Introductory blog post](http://engineering.flipboard.com/2015/02/mobile-web/)
+    地址：https://github.com/Flipboard/react-canvas.git
+    npm install
+    npm start
 
-React Canvas adds the ability for React components to render to `<canvas>` rather than DOM.
+## 运行项目，观察里面的四个例子：
 
-This project is a work-in-progress. Though much of the code is in production on flipboard.com, the React canvas bindings are relatively new and the API is subject to change.
+ - gradient: 一个用来做颜色渐变的组件；
+ - css-layout: 在canvas中轻松实现图文排版；
+ - listview: 使用listview控件，实现高性能的列表；
+ - timeline: 具有动画效果的翻页图文页面。
 
-## Motivation
+## lib文件夹： 各种组件及工具类
 
-Having a long history of building interfaces geared toward mobile devices, we found that the reason mobile web apps feel slow when compared to native apps is the DOM. CSS animations and transitions are the fastest path to smooth animations on the web, but they have several limitations. React Canvas leverages the fact that most modern mobile browsers now have hardware accelerated canvas.
+## 打包工具： gulp+webpack
 
-While there have been other attempts to bind canvas drawing APIs to React, they are more focused on visualizations and games. Where React Canvas differs is in the focus on building application user interfaces. The fact that it renders to canvas is an implementation detail.
+##尝试实现：
 
-React Canvas brings some of the APIs web developers are familiar with and blends them with a high performance drawing engine.
+### 新建页面、js文件，修改webpack.config.js
 
-## Installation
+```
+//index.html
+<body>
+  <div id="main"></div>
+  <script src="/build/gyroscope.js"></script>
+</body>
+```
 
-React Canvas is available through npm:
-
-```npm install react-canvas```
-
-## React Canvas Components
-
-React Canvas provides a set of standard React components that abstract the underlying rendering implementation.
-
-### &lt;Surface&gt;
-
-**Surface** is the top-level component. Think of it as a drawing canvas in which you can place other components.
-
-### &lt;Layer&gt;
-
-**Layer** is the the base component by which other components build upon. Common styles and properties such as top, width, left, height, backgroundColor and zIndex are expressed at this level.
-
-### &lt;Group&gt;
-
-**Group** is a container component. Because React enforces that all components return a single component in `render()`, Groups can be useful for parenting a set of child components. The Group is also an important component for optimizing scrolling performance, as it allows the rendering engine to cache expensive drawing operations.
-
-### &lt;Text&gt;
-
-**Text** is a flexible component that supports multi-line truncation, something which has historically been difficult and very expensive to do in DOM.
-
-### &lt;Image&gt;
-
-**Image** is exactly what you think it is. However, it adds the ability to hide an image until it is fully loaded and optionally fade it in on load.
-
-### &lt;Gradient&gt;
-
-**Gradient** can be used to set the background of a group or surface. 
-```javascript
-  render() {
+```
+//webpack.config.js
+entry: {
     ...
-    return (
-      <Group style={this.getStyle()}>
-        <Gradient style={this.getGradientStyle()} 
-                  colorStops={this.getGradientColors()} />
-      </Group>
-    );
-  }
-  getGradientColors(){
-    return [
-      { color: "transparent", position: 0 },
-      { color: "#000", position: 1 }
-    ]
-  }
-``` 
-
-### &lt;ListView&gt;
-
-**ListView** is a touch scrolling container that renders a list of elements in a column. Think of it like UITableView for the web. It leverages many of the same optimizations that make table views on iOS and list views on Android fast.
-
-## Events
-
-React Canvas components support the same event model as normal React components. However, not all event types are currently supported.
-
-For a full list of supported events see [EventTypes](lib/EventTypes.js).
-
-## Building Components
-
-Here is a very simple component that renders text below an image:
-
-```javascript
-var React = require('react');
-var ReactCanvas = require('react-canvas');
-
-var Surface = ReactCanvas.Surface;
-var Image = ReactCanvas.Image;
-var Text = ReactCanvas.Text;
-
-var MyComponent = React.createClass({
-
-  render: function () {
-    var surfaceWidth = window.innerWidth;
-    var surfaceHeight = window.innerHeight;
-    var imageStyle = this.getImageStyle();
-    var textStyle = this.getTextStyle();
-
-    return (
-      <Surface width={surfaceWidth} height={surfaceHeight} left={0} top={0}>
-        <Image style={imageStyle} src='...' />
-        <Text style={textStyle}>
-          Here is some text below an image.
-        </Text>
-      </Surface>
-    );
-  },
-
-  getImageHeight: function () {
-    return Math.round(window.innerHeight / 2);
-  },
-
-  getImageStyle: function () {
-    return {
-      top: 0,
-      left: 0,
-      width: window.innerWidth,
-      height: this.getImageHeight()
-    };
-  },
-
-  getTextStyle: function () {
-    return {
-      top: this.getImageHeight() + 10,
-      left: 0,
-      width: window.innerWidth,
-      height: 20,
-      lineHeight: 20,
-      fontSize: 12
-    };
-  }
-
-});
-```
-
-## ListView
-
-Many mobile interfaces involve an infinitely long scrolling list of items. React Canvas provides the ListView component to do just that.
-
-Because ListView virtualizes elements outside of the viewport, passing children to it is different than a normal React component where children are declared in render().
-
-The `numberOfItemsGetter`, `itemHeightGetter` and `itemGetter` props are all required.
-
-```javascript
-var ListView = ReactCanvas.ListView;
-
-var MyScrollingListView = React.createClass({
-
-  render: function () {
-    return (
-      <ListView
-        numberOfItemsGetter={this.getNumberOfItems}
-        itemHeightGetter={this.getItemHeight}
-        itemGetter={this.renderItem} />
-    );
-  },
-
-  getNumberOfItems: function () {
-    // Return the total number of items in the list
-  },
-
-  getItemHeight: function () {
-    // Return the height of a single item
-  },
-
-  renderItem: function (index) {
-    // Render the item at the given index, usually a <Group>
-  },
-
-});
-```
-
-See the [timeline example](examples/timeline/app.js) for a more complete example.
-
-Currently, ListView requires that each item is of the same height. Future versions will support variable height items.
-
-## Text sizing
-
-React Canvas provides the `measureText` function for computing text metrics.
-
-The [Page component](examples/timeline/components/Page.js) in the timeline example contains an example of using measureText to achieve precise multi-line ellipsized text.
-
-Custom fonts are not currently supported but will be added in a future version.
-
-## css-layout
-
-There is experimental support for using [css-layout](https://github.com/facebook/css-layout) to style React Canvas components. This is a more expressive way of defining styles for a component using standard CSS styles and flexbox.
-
-Future versions may not support css-layout out of the box. The performance implications need to be investigated before baking this in as a core layout principle.
-
-See the [css-layout example](examples/css-layout).
-
-## Accessibility
-
-This area needs further exploration. Using fallback content (the canvas DOM sub-tree) should allow screen readers such as VoiceOver to interact with the content. We've seen mixed results with the iOS devices we've tested. Additionally there is a standard for [focus management](http://www.w3.org/TR/2010/WD-2dcontext-20100304/#dom-context-2d-drawfocusring) that is not supported by browsers yet.
-
-One approach that was raised by [Bespin](http://vimeo.com/3195079) in 2009 is to keep a [parallel DOM](http://robertnyman.com/2009/04/03/mozilla-labs-online-code-editor-bespin/#comment-560310) in sync with the elements rendered in canvas.
-
-## Running the examples
-
-```
-npm install
-npm start
-```
-
-This will start a live reloading server on port 8080. To override the default server and live reload ports, run `npm start` with PORT and/or RELOAD_PORT environment variables.
-
-**A note on NODE_ENV and React**: running the examples with `NODE_ENV=production` will noticeably improve scrolling performance. This is because React skips propType validation in production mode.
-
-
-## Using with webpack
-
-The [brfs](https://github.com/substack/brfs) transform is required in order to use the project with webpack.
-
-```bash
-npm install -g brfs
-npm install --save-dev transform-loader brfs
-```
-
-Then add the [brfs](https://github.com/substack/brfs) transform to your webpack config
-
-```javascript
-module: {
-  postLoaders: [
-    { loader: "transform?brfs" }
-  ]
+    'gyroscope': ['./examples/gyroscope/app.js'],
+},
+output: {
+    filename: '[name].js'
 }
 ```
+### 编写app.js
 
-## Contributing
+ 组件与React略有不同，参考文档;
 
-We welcome pull requests for bug fixes, new features, and improvements to React Canvas. Contributors to the main repository must accept Flipboard's Apache-style [Individual Contributor License Agreement (CLA)](https://docs.google.com/forms/d/1gh9y6_i8xFn6pA15PqFeye19VqasuI9-bGp_e0owy74/viewform) before any changes can be merged.
+ 默认采用绝对布局，参考css-layout例子，可以通过指定``enableCSSLayout={true}``来使用CSS布局和flexbox布局;
+
+ 设置监听，可以直接操作DOM：
+
+    componentDidMount: function()
+
+        //监听手机陀螺仪事件
+        if (window.DeviceMotionEvent) {
+            window.addEventListener("devicemotion", this.motionHandler, false);
+        } else {
+            document.body.innerHTML = "Not supported on your device.";
+        }
+        //禁用原生手势，阻止屏幕上下滑动
+        document.addEventListener("touchmove", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+        }, false);
+    },
+
+图片组件没有加载成功后的回调，修改源码``/lib/Image.js``：
+
+    componentDidMount: function () {
+        ImageCache.get(this.props.src).on('load', this.handleImageLoad);
+    },
+
+    handleImageLoad: function () {
+        var imageAlpha = 1;
+        if (this.props.fadeIn) {
+            imageAlpha = 0;
+            this._animationStartTime = Date.now();
+            this._pendingAnimationFrame = requestAnimationFrame(this.stepThroughAnimation);
+        }
+        this.setState({ loaded: true, imageAlpha: imageAlpha });
+        //增加如下代码
+        if(this.props.onLoadEnd){
+            this.props.onLoadEnd();
+        }
+    },
+预加载图片：
+
+    preLoadImages: function () {
+
+        var imgs = [];
+        for(var i = 1; i <= imgs_num; i++){
+            imgs.push(this.renderImages(i));
+        }
+
+        return (
+            <Group>
+                {imgs}
+            </Group>
+        );
+    },
+
+    renderImages: function (i) {
+        return(
+            <Image style={{top: 0, left: 0, width:0, height: 0}}
+                   src={"https://xx.xx.xx/xxx-" + i + ".jpg"}
+                   onLoadEnd={() => {
+                       imgLoadEndNum++;
+                       //计数
+                       this.setState({imgLoadEndNum: imgLoadEndNum})
+                   }}
+                   key={i}
+            />
+        )
+    },
+
+ 响应监听：
+
+    motionHandler: function (event) {
+        var timeD = (new Date() - last_time);
+        var angleV = event.rotationRate.beta;
+
+        angleV = angleV > 60 ? 60 : angleV;
+        angleV = angleV < -60 ? -60 : angleV;
+
+        var angleD = angleV * timeD / 1000;
+
+        angle = angle + angleD;
+
+        if(angle < 0){
+            angle = 0;
+        }
+        if(angle > max_angle){
+            angle = max_angle;
+        }
+
+        img_index = Math.round((angle / max_angle) * 102);
+
+        img_index = img_index < 1 ? 1 : img_index;
+        img_index = img_index > imgs_num ? imgs_num : img_index;
+        //底部的滑块位置
+        var slider_left = (img_index / imgs_num) * (this.canvasWidth - 50);
+
+        //更新state即可重新渲染
+        this.setState({img_index: img_index, slider_left: slider_left});
+
+        last_time = new Date();
+    },
+
+ ``getSize():``
+
+    //getBoundingClientRect()
+    //这个方法返回一个矩形对象，包含四个属性：left、top、right和bottom。分别表示元素各边与页面上边和左边的距离。
+    getSize: function () {
+        return document.getElementById('main').getBoundingClientRect();
+    },
+
+ 禁止页面元素被选中：
+
+    <style>
+    body, canvas, div {
+      -moz-user-select: none;
+      -webkit-user-select: none;
+      -ms-user-select: none;
+      -khtml-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: rgba(1, 1, 1, 0);
+    }
+  </style>
+
+ 至此，基本功能实现。但是考虑到引导页结构复杂，同时还有动画，而通过使用发现，react-canvas对动画支持很差，使用state实现则开销很大，放弃使用react-canvas实现。但在以后如果有合适的场景下，应该会有用武之地。
+
+## 测试react-canvas事件（主要是点击事件）：
+### 支持的事件：
+
+    //EventTypes.js
+    module.exports = {
+        onTouchStart: 'touchstart',
+        onTouchMove: 'touchmove',
+        onTouchEnd: 'touchend',
+        onTouchCancel: 'touchcancel',
+        onClick: 'click',
+        onContextMenu: 'contextmenu',
+        onDoubleClick: 'dblclick'
+    };
+
+测试代码：
+
+    <Surface top={0} left={0} width={size.width} height={size.height}>
+        //文本组件可直接添加事件。
+        <Text style={this.getTextStyle()}onClick={() => {outClick();}}>
+            Click Me
+        </Text>
+        //图片组件需要包含在Group组件中，给Group组件添加事件。Group和div在展现上不同，不会包含子组件，需要同时指定它的位置和大小。使用css-layout可能不存在这个问题，没有尝试。
+        <Group style={{top: 200, left: 100, width: 100, height: 100, backgroundColor: '#00f'}} onClick={() => {alert('click image')}}>
+            <Image style={{top: 200, left: 100, width: 80, height: 80}}
+                           src="../gyroscope/button.jpg"/>
+        </Group>
+
+        //可以当做div组件理解。
+        <Group style={{top: 300, left: 100, width: 200, height: 100, backgroundColor: '#F00'}} onClick={() => {alert('click image')}}>
+        </Group>
+        //文档里说是左右组件的基组件，用起来和Group差不多。
+        <Layer style={{top: 500, left: 100, width: 200, height: 100, backgroundColor: '#0F0'}} onClick={() => {alert('click image')}}>
+        </Layer>
+
+    </Surface>
+

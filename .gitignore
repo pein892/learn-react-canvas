@@ -1,2 +1,8 @@
 build
 node_modules
+jsLibraryMappings.xml
+misc.xml
+modules.xml
+react-canvas.iml
+vcs.xml
+workspace.xml
